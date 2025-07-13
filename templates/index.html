@@ -1,56 +1,69 @@
 <!DOCTYPE html>
-<html dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>انتخاب نقش</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two-Person Chat</title>
     <style>
         body {
-            font-family: Tahoma;
-            background: #f5f5f5;
+            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
+            background-color: #f5f5f5;
         }
         .container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            padding: 2rem;
             text-align: center;
-            width: 300px;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-        button {
-            background: #4CAF50;
-            color: white;
+        h1 {
+            color: #333;
+            margin-bottom: 2rem;
+        }
+        .user-options {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .user-btn {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
             border: none;
-            padding: 10px 20px;
-            margin: 10px;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
-            width: 80%;
+            transition: background-color 0.3s;
         }
-        button:hover {
-            background: #45a049;
+        .user1-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .user2-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        .user-btn:hover {
+            opacity: 0.9;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>نقش خود را انتخاب کنید</h2>
-        <button onclick="selectRole('user1')">کاربر اول</button>
-        <button onclick="selectRole('user2')">کاربر دوم</button>
+        <h1>Select Your Role</h1>
+        <div class="user-options">
+            <button class="user-btn user1-btn" onclick="selectUser('user1')">I'm User 1</button>
+            <button class="user-btn user2-btn" onclick="selectUser('user2')">I'm User 2</button>
+        </div>
     </div>
 
     <script>
-        function selectRole(role) {
-            const userId = 'user-' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('chatData', JSON.stringify({
-                userId: userId,
-                role: role
-            }));
-            window.location.href = 'chat.html';
+        function selectUser(user) {
+            localStorage.setItem('currentUser', user);
+            window.location.href = '/chat';
         }
     </script>
 </body>
