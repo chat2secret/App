@@ -1,87 +1,93 @@
-from flask import Flask, request, jsonify, render_template
-from flask_socketio import SocketIO, emit
-from datetime import datetime
-import json
-import os
+from flask import Flask, request, render_template_string
 
-app = Flask(__name__, static_folder='static', template_folder='templates')
-app.config['SECRET_KEY'] = 'secret!'
-app.config['CORS_ALLOWED_ORIGINS'] = '*'
-socketio = SocketIO(app, cors_allowed_origins="*")
+app = Flask(__name__)
 
-# Simple in-memory storage for messages
-messages = {
-    "user1": [],
-    "user2": []
-}
+# ذخیره پیام‌ها (در حالت واقعی از دیتابیس استفاده کن)
+messages = []
 
-# Store online users
-online_users = {
-    "user1": False,
-    "user2": False
-}
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/chat')
+@app.route("/", methods=["GET", "POST"])
 def chat():
-    return render_template('chat.html')
-
-@app.route('/api/messages/<user>', methods=['GET'])
-def get_messages(user):
-    if user in ['user1', 'user2']:
-        return jsonify(messages[user])
-    return jsonify({"error": "Invalid user"}), 400
-
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected')
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected')
-
-@socketio.on('set_user')
-def handle_set_user(data):
-    user = data.get('user')
-    if user in ['user1', 'user2']:
-        online_users[user] = True
-        emit('user_status', {'user': user, 'status': 'online'}, broadcast=True)
-        print(f'{user} is now online')
-
-@socketio.on('user_offline')
-def handle_user_offline(data):
-    user = data.get('user')
-    if user in ['user1', 'user2']:
-        online_users[user] = False
-        emit('user_status', {'user': user, 'status': 'offline'}, broadcast=True)
-        print(f'{user} is now offline')
-
-@socketio.on('send_message')
-def handle_send_message(data):
-    sender = data.get('sender')
-    receiver = data.get('receiver')
-    message = data.get('message')
+    if request.method == "POST":
+        username = request.form.get("username")
+        message = request.form.get("message")
+        
+        if username and message:
+            messages.append({"user": username, "text": message})
     
-    if sender not in ['user1', 'user2'] or receiver not in ['user1', 'user2']:
-        return
+    return render_template_string('''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>چت دو نفره</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            direction: rtl;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .chat-box {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        .user1 {
+            background: #e3f2fd;
+            text-align: right;
+        }
+        .user2 {
+            background: #fff8e1;
+            text-align: left;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>چت خصوصی (من و دوستم) 💬</h1>
     
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    message_data = {
-        'sender': sender,
-        'receiver': receiver,
-        'message': message,
-        'timestamp': timestamp
-    }
+    <div class="chat-box">
+        {% for msg in messages %}
+            <div class="message {{ 'user1' if msg.user == 'user1' else 'user2' }}">
+                <strong>{{ 'من' if msg.user == 'user1' else 'دوستم' }}:</strong> {{ msg.text }}
+            </div>
+        {% endfor %}
+    </div>
     
-    # Store message for both users
-    messages[sender].append(message_data)
-    messages[receiver].append(message_data)
-    
-    # Emit to both users
-    emit('receive_message', message_data, broadcast=True)
+    <form method="POST">
+        <select name="username" required>
+            <option value="">-- انتخاب کاربر --</option>
+            <option value="user1">من (کاربر ۱)</option>
+            <option value="user2">دوستم (کاربر ۲)</option>
+        </select>
+        <input type="text" name="message" placeholder="پیامتو بنویس..." required>
+        <button type="submit">ارسال</button>
+    </form>
+</body>
+</html>
+    ''', messages=messages)
 
-if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    app.run(debug=True)
